@@ -1,93 +1,71 @@
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
-class RoomInventory {
+class RoomSearchService {
 
-    private Map<String, Integer> inventory;
+    private RoomInventory inventory;
 
-    // Constructor → initialize inventory
-    public RoomInventory() {
-        inventory = new HashMap<>();
+    public RoomSearchService(RoomInventory inventory) {
+        this.inventory = inventory;
     }
 
-    // Register room type with count
-    public void addRoomType(String roomType, int count) {
-        inventory.put(roomType, count);
-    }
+    // Read-only search
+    public void searchAvailableRooms(List<Room> rooms) {
 
-    // Get availability
-    public int getAvailability(String roomType) {
-        return inventory.getOrDefault(roomType, 0);
-    }
+        System.out.println("===== Available Rooms =====\n");
 
-    // Book a room (decrease count)
-    public boolean bookRoom(String roomType) {
-        int available = getAvailability(roomType);
+        boolean found = false;
 
-        if (available > 0) {
-            inventory.put(roomType, available - 1);
-            return true;
-        } else {
-            return false;
+        for (Room room : rooms) {
+
+            int available = inventory.getAvailability(room.getType());
+
+            // Defensive check: only show available rooms
+            if (available > 0) {
+                room.displayDetails();
+                System.out.println("Available: " + available);
+                System.out.println();
+                found = true;
+            }
         }
-    }
 
-    // Cancel booking (increase count)
-    public void releaseRoom(String roomType) {
-        int available = getAvailability(roomType);
-        inventory.put(roomType, available + 1);
-    }
-
-    // Display full inventory
-    public void displayInventory() {
-        System.out.println("===== Current Room Inventory =====");
-        for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
-            System.out.println(entry.getKey() + " : " + entry.getValue());
+        if (!found) {
+            System.out.println("No rooms available at the moment.");
         }
     }
 }
-
 //main
+import java.util.ArrayList;
+import java.util.List;
+
 public class HotelBookingApp {
 
     public static void main(String[] args) {
 
-        // Create Room objects (Domain)
+        // Room objects (Domain)
         Room single = new SingleRoom();
         Room doubleRoom = new DoubleRoom();
         Room suite = new SuiteRoom();
 
-        // Initialize Inventory (State)
+        // Store rooms in a list
+        List<Room> rooms = new ArrayList<>();
+        rooms.add(single);
+        rooms.add(doubleRoom);
+        rooms.add(suite);
+
+        // Inventory (State)
         RoomInventory inventory = new RoomInventory();
+        inventory.addRoomType(single.getType(), 2);
+        inventory.addRoomType(doubleRoom.getType(), 0); // intentionally unavailable
+        inventory.addRoomType(suite.getType(), 1);
 
-        inventory.addRoomType(single.getType(), 5);
-        inventory.addRoomType(doubleRoom.getType(), 3);
-        inventory.addRoomType(suite.getType(), 2);
+        // Search Service (Read-only)
+        RoomSearchService searchService = new RoomSearchService(inventory);
 
-        // Display Room Details
-        System.out.println("===== Room Details =====\n");
+        // Guest searches rooms
+        searchService.searchAvailableRooms(rooms);
 
-        single.displayDetails();
-        System.out.println();
-
-        doubleRoom.displayDetails();
-        System.out.println();
-
-        suite.displayDetails();
-        System.out.println();
-
-        // Display Inventory
-        inventory.displayInventory();
-
-        // Simulate Booking
-        System.out.println("\nBooking a Single Room...");
-        if (inventory.bookRoom("Single Room")) {
-            System.out.println("Booking Successful");
-        } else {
-            System.out.println("No rooms available");
-        }
-
-        // Display Updated Inventory
+        // Verify state is unchanged
+        System.out.println("===== Inventory After Search (Should be same) =====");
         inventory.displayInventory();
     }
 }
