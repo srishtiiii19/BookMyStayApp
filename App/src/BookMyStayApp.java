@@ -1,71 +1,95 @@
-import java.util.List;
+class Reservation {
 
-class RoomSearchService {
+    private String guestName;
+    private String roomType;
 
-    private RoomInventory inventory;
-
-    public RoomSearchService(RoomInventory inventory) {
-        this.inventory = inventory;
+    public Reservation(String guestName, String roomType) {
+        this.guestName = guestName;
+        this.roomType = roomType;
     }
 
-    // Read-only search
-    public void searchAvailableRooms(List<Room> rooms) {
+    public String getGuestName() {
+        return guestName;
+    }
 
-        System.out.println("===== Available Rooms =====\n");
+    public String getRoomType() {
+        return roomType;
+    }
 
-        boolean found = false;
+    public void display() {
+        System.out.println("Guest: " + guestName + " | Requested Room: " + roomType);
+    }
+}
 
-        for (Room room : rooms) {
+//fifo
+import java.util.LinkedList;
+import java.util.Queue;
 
-            int available = inventory.getAvailability(room.getType());
+class BookingRequestQueue {
 
-            // Defensive check: only show available rooms
-            if (available > 0) {
-                room.displayDetails();
-                System.out.println("Available: " + available);
-                System.out.println();
-                found = true;
-            }
+    private Queue<Reservation> queue;
+
+    public BookingRequestQueue() {
+        queue = new LinkedList<>();
+    }
+
+    // Add request (enqueue)
+    public void addRequest(Reservation reservation) {
+        queue.offer(reservation);
+        System.out.println("Request added for " + reservation.getGuestName());
+    }
+
+    // View next request (peek)
+    public Reservation viewNextRequest() {
+        return queue.peek();
+    }
+
+    // Remove request (dequeue)
+    public Reservation getNextRequest() {
+        return queue.poll();
+    }
+
+    // Display all requests
+    public void displayQueue() {
+        System.out.println("\n===== Booking Request Queue =====");
+
+        if (queue.isEmpty()) {
+            System.out.println("No pending requests.");
+            return;
         }
 
-        if (!found) {
-            System.out.println("No rooms available at the moment.");
+        for (Reservation r : queue) {
+            r.display();
         }
     }
 }
-//main
-import java.util.ArrayList;
-import java.util.List;
 
+//main
 public class HotelBookingApp {
 
     public static void main(String[] args) {
 
-        // Room objects (Domain)
-        Room single = new SingleRoom();
-        Room doubleRoom = new DoubleRoom();
-        Room suite = new SuiteRoom();
+        // Initialize booking queue
+        BookingRequestQueue requestQueue = new BookingRequestQueue();
 
-        // Store rooms in a list
-        List<Room> rooms = new ArrayList<>();
-        rooms.add(single);
-        rooms.add(doubleRoom);
-        rooms.add(suite);
+        // Simulating guest requests (arrival order)
+        Reservation r1 = new Reservation("Alice", "Single Room");
+        Reservation r2 = new Reservation("Bob", "Double Room");
+        Reservation r3 = new Reservation("Charlie", "Suite Room");
 
-        // Inventory (State)
-        RoomInventory inventory = new RoomInventory();
-        inventory.addRoomType(single.getType(), 2);
-        inventory.addRoomType(doubleRoom.getType(), 0); // intentionally unavailable
-        inventory.addRoomType(suite.getType(), 1);
+        // Add to queue (FIFO order)
+        requestQueue.addRequest(r1);
+        requestQueue.addRequest(r2);
+        requestQueue.addRequest(r3);
 
-        // Search Service (Read-only)
-        RoomSearchService searchService = new RoomSearchService(inventory);
+        // Display queue
+        requestQueue.displayQueue();
 
-        // Guest searches rooms
-        searchService.searchAvailableRooms(rooms);
-
-        // Verify state is unchanged
-        System.out.println("===== Inventory After Search (Should be same) =====");
-        inventory.displayInventory();
+        // Show next request to be processed
+        System.out.println("\nNext request to process:");
+        Reservation next = requestQueue.viewNextRequest();
+        if (next != null) {
+            next.display();
+        }
     }
 }
